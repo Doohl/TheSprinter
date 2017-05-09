@@ -230,6 +230,7 @@ client.on('message', message => {
 						
 						let timer = setInterval(() => {
 							if(sprint.cancelled) {
+								editMessage.edit(`--> **TIME REMAINING: [CANCELLED!!]**`);
 								clearInterval(timer);
 								return;
 							}
@@ -293,13 +294,68 @@ client.on('message', message => {
 					}
 				}
 				
-				let sprint = activeSprints[0];
+				let sprint = undefined;
+				if(id > 0) {
+					for(let S of activeSprints) {
+						if(S.id === id) {
+							sprint = S;
+							break;
+						}
+					}
+				}
+				
+				if(!sprint) {
+					sprint = activeSprints[0];
+				}			
+				
 				if(!startingCount) {
-					message.channel.send(`:white_check_mark: ${message.author} has joined the sprint.`);
+					message.channel.send(`:white_check_mark: ${message.author} has joined Sprint #${sprint.id}.`);
 				} else {
-					message.channel.send(`:white_check_mark: ${message.author} has joined the sprint. Starting wordcount: ${startingCount}`);
+					message.channel.send(`:white_check_mark: ${message.author} has joined Sprint #${sprint.id}. Starting wordcount: ${startingCount}`);
 				}
 				sprint.sprinters.push({'name': '' + message.author, 'wordcount': 0, 'startingCount': startingCount});
+			
+			/**
+				@command	"!quit"
+				@desc		Quits the current sprint session, cancels if it there are no users left.
+			*/
+			} else if (tokens[0] === "quit") {
+				
+				let inSprint = undefined;
+				for(let sprint of activeSprints) {
+					for(let sprinter of sprint.sprinters) {
+						if(sprinter.name === '' + message.author) {
+							inSprint = sprint;
+							break;
+						}
+					}
+					if(inSprint) {
+						break;
+					}
+				}
+				if(!inSprint) {
+					message.reply("you cannot quit if you are not in a sprint.");
+					return;
+				}
+				for(let i = 0, l = inSprint.sprinters.length; i < l; i++) {
+					let sprinter = inSprint.sprinters[i];
+					if(sprinter.name === '' + message.author) {
+						inSprint.sprinters.splice(i, 1);
+						break;
+					}
+				}
+				if(!inSprint.sprinters.length) {
+					inSprint.cancelled = true;
+					for(let i = 0, l = activeSprints.length; i < l; i++) {
+						if(activeSprints[i].id === inSprint.id) {
+							activeSprints.splice(i, 1);
+							break;
+						}
+					}
+					message.reply(`you have left Sprint #${inSprint.id}! The sprint has been cancelled (no users remaining).`);
+				} else {
+					message.reply(`you have left Sprint #${inSprint.id}!`);
+				}
 			
 			/**
 				@command	"!wc"
