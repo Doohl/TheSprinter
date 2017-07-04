@@ -73,7 +73,7 @@ function hoursRemaining(time, maxTime) {
 		minutes = "";
 	}
 	seconds = seconds + " second" + (seconds == 1 ? "" : "s");
-	
+
 	return hours + minutes + seconds;
 }
 
@@ -83,7 +83,7 @@ function hoursRemaining(time, maxTime) {
 client.on('message', message => {
 	if(message.content[0] === '!') {
 		let tokens = message.content.substring(1).split(" ");
-		
+
 		/* Writing-sprint related commands */
 		if(message.channel.name == 'writing_sprint') {
 			/**
@@ -93,7 +93,7 @@ client.on('message', message => {
 			if (tokens[0] === 'help') {
 				message.channel.send(`Here is a list of all the commands ${message.author}:\n`)
 				message.channel.send(helpMessage);
-			
+
 			/**
 				@command	"!sprint"
 				@desc		Begins the main 'writing sprint' functionality
@@ -116,7 +116,7 @@ client.on('message', message => {
 					message.reply("you're already in a sprint! You can't be in more than one at a time.");
 					return;
 				}
-				
+
 				if(tokens.length < 2) {
 					message.reply("correct syntax is: `!sprint {minutes}` ex: '!sprint 15'");
 					return;
@@ -141,20 +141,21 @@ client.on('message', message => {
 						defaultWordcount = 0;
 					}
 				}
-				
-				
+
+
 				currentSprintID++;
 				minutes = Math.floor(minutes);
 				
-				message.channel.send(`@Sprinters ${message.author} has started a new Sprint (#${currentSprintID})! \n**Duration**: ${minutes} ${minutes > 1 ? 'minutes' : 'minute'}`);
+				let sprinterMention = message.channel.guild.roles.find('name', 'Sprinters');
+				message.channel.send(`${sprinterMention} ${message.author} has started a new Sprint (#${currentSprintID})! \n**Duration**: ${minutes} ${minutes > 1 ? 'minutes' : 'minute'}`);
 				message.channel.send("To participate, type `!join`. The sprint will begin in *1 minute*. " + getRandFromList(preEncouragement));
-				
+
 				let sprint = {'id': currentSprintID, 'owner': '' + message.author, 'duration': minutes, 'sprinters': []};
 				sprint.sprinters.push({'name': '' + message.author, 'wordcount': 0, 'startingCount': defaultWordcount});
 				activeSprints.unshift(sprint);
-				
+
 				sprint.paused = true;
-				
+
 				/*
 					Function to call when the sprint's time is up
 				*/
@@ -165,12 +166,12 @@ client.on('message', message => {
 							rawSprinters.push(sprinter.name);
 						}
 						message.channel.send(`${rawSprinters.join(", ")}\nTime's up! Sprint #${sprint.id} has ended. You have **1 minute** to update your wordcount using` + " `!wc`.");
-						
+
 						setTimeout(() => {
 							sprint.sprinters.sort((a, b) => {
 								return (b.wordcount - b.startingCount) - (a.wordcount - a.startingCount);
 							});
-							
+
 							let ending = "**RESULTS**:";
 							let place = 1;
 							for(let sprinter of sprint.sprinters) {
@@ -186,7 +187,7 @@ client.on('message', message => {
 								}
 								let wpm = Math.ceil((sprinter.wordcount - sprinter.startingCount) / minutes);
 								ending += `${sprinter.name} finished with **${sprinter.wordcount - sprinter.startingCount}** words written (${wpm} WPM)`;
-								
+
 								if(!sprinterWPM[sprinter.name] || sprinterWPM[sprinter.name] < wpm) {
 									ending += " (PERSONAL BEST!)";
 								}
@@ -201,24 +202,24 @@ client.on('message', message => {
 								place++;
 							}
 							message.channel.send(ending);
-							
+
 							for(let i = 0, l = activeSprints.length; i < l; i++) {
 								if(activeSprints[i].id === sprint.id) {
 									activeSprints.splice(i, 1);
 									break;
 								}
 							}
-							
+
 						}, 60000);
 					}
 				};
-				
+
 				setTimeout(() => {
 					if(!sprint.cancelled) {
 						sprint.paused = false;
-						
+
 						var alertText = "";
-						
+
 						sprint.second = 0;
 						sprint.maxSeconds = sprint.duration * 60;
 						let editMessage = undefined;
@@ -227,7 +228,7 @@ client.on('message', message => {
 							.then(message => {
 								editMessage = message;
 							});
-						
+
 						let timer = setInterval(() => {
 							if(sprint.cancelled) {
 								editMessage.edit(`--> **TIME REMAINING: [CANCELLED!!]**`);
@@ -247,12 +248,12 @@ client.on('message', message => {
 										editMessage = message;
 									});
 							}
-							
+
 						}, 5000);
-						
+
 					}
 				}, 60000);
-			
+
 			/**
 				@command	"!join"
 				@desc		Joins a writing sprint in session
@@ -293,7 +294,7 @@ client.on('message', message => {
 						id = 0;
 					}
 				}
-				
+
 				let sprint = undefined;
 				if(id > 0) {
 					for(let S of activeSprints) {
@@ -303,24 +304,24 @@ client.on('message', message => {
 						}
 					}
 				}
-				
+
 				if(!sprint) {
 					sprint = activeSprints[0];
-				}			
-				
+				}
+
 				if(!startingCount) {
 					message.channel.send(`:white_check_mark: ${message.author} has joined Sprint #${sprint.id}.`);
 				} else {
 					message.channel.send(`:white_check_mark: ${message.author} has joined Sprint #${sprint.id}. Starting wordcount: ${startingCount}`);
 				}
 				sprint.sprinters.push({'name': '' + message.author, 'wordcount': 0, 'startingCount': startingCount});
-			
+
 			/**
 				@command	"!quit"
 				@desc		Quits the current sprint session, cancels if it there are no users left.
 			*/
 			} else if (tokens[0] === "quit") {
-				
+
 				let inSprint = undefined;
 				for(let sprint of activeSprints) {
 					for(let sprinter of sprint.sprinters) {
@@ -356,7 +357,7 @@ client.on('message', message => {
 				} else {
 					message.reply(`you have left Sprint #${inSprint.id}!`);
 				}
-			
+
 			/**
 				@command	"!wc"
 				@desc		Update wordcount during a writing sprint
@@ -382,7 +383,7 @@ client.on('message', message => {
 					message.reply("you are not in a sprint. Consider starting one yourself with the `!sprint` command.");
 					return;
 				}
-				
+
 				if(tokens.length < 2) {
 					message.reply("correct syntax is: `!wc {wordcount}` ex: '!wc 400'");
 					return;
@@ -397,11 +398,11 @@ client.on('message', message => {
 					message.reply("i'm sorry, i'm afraid i can't let you do that :angry:");
 					return;
 				}
-				
+
 				let oldcount = inSprint.wordcount;
 				inSprint.wordcount = wordcount;
 				message.channel.send(`:white_check_mark: ${message.author} has written ${wordcount - oldcount} words. Total now: ${wordcount} words`)
-			
+
 			/**
 				@command	"!time"
 				@desc		Check the time left during a writing sprint
@@ -424,11 +425,11 @@ client.on('message', message => {
 					return;
 				}
 				message.reply(`time remaining: **[${timeRemaining(inSprint.second, inSprint.maxSeconds)}]**`)
-			
+
 			}
-		}	
+		}
 		/* Miscellaneous commands */
-			
+
 		/**
 			@command	"!dailygoal"
 			@desc		Set or update your personal daily goal
@@ -448,7 +449,7 @@ client.on('message', message => {
 				message.reply("i'm sorry, i'm afraid i can't let you do that :angry:");
 				return;
 			}
-			
+
 			let entry = undefined;
 			for(let E of dailyGoals) {
 				if(E.user === '' + message.author) {
@@ -466,7 +467,7 @@ client.on('message', message => {
 			entry.wordcount = 0;
 			entry.time = 86400;
 			message.reply(`you have 24hrs to write ${wordcount} words. Good luck! You can check your progress with ` + "`!dailycheck` and update your wordcount with `!dailywc`.")
-		
+
 		/**
 			@command	"!dailywc"
 			@desc		Update your daily wordcount
@@ -502,8 +503,8 @@ client.on('message', message => {
 			} else {
 				entry.done = true;
 				entry.channel.send(`:sparkles: ${entry.user}, you have **met** your daily goal of ${entry.goal} words! :sparkles: \nYou finished with ${entry.wordcount} words at ${hoursRemaining(86400, entry.time)} remaining!`)
-			} 
-		
+			}
+
 		/**
 			@command	"!dailycheck"
 			@desc		Check the progress on your daily goal
@@ -520,7 +521,7 @@ client.on('message', message => {
 				return;
 			}
 			message.reply(`you have written ${entry.wordcount} words today! You have ${hoursRemaining(86400, entry.time)} to meet your goal of ${entry.goal} words.`);
-		
+
 		/**
 			@command	"!sprintwords"
 			@desc		Output all sprinted words
@@ -529,7 +530,7 @@ client.on('message', message => {
 			message.reply(`sprinters have written a grand total of ${sprintWordcount} words!`);
 		}
 	}
-  
+
 });
 
 /*
@@ -537,13 +538,13 @@ client.on('message', message => {
 */
 
 client.on('ready', () => {
-	console.log('[JEREMY 2.0] started on ' + new Date());
-	
+	console.log('[Arvan] started on ' + new Date());
+
 	// Main iterary logic loop: T = 1000ms = 1s
 	let i = 0;
 	setInterval(() => {
 		i++
-		
+
 		// Update the bot's status every 10 seconds
 		if(!(i % 10)) {
 			client.user.setGame(`${sprintWordcount} words | !help`);
