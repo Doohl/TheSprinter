@@ -1,0 +1,15 @@
+{
+  "name": "TheSprinter",
+  "version": "0.0.1",
+  "description": "A simple discord bot that allows users to track writing speeds.",
+  "main": "main.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Doohl/TheSprinter.git"
+  },
+  "author": "Leonardo Serrano <dhlserrano@gmail.com>",
+  "dependencies": {
+    "discord.js": "^11.3.2"
+  }
+}
